@@ -24,6 +24,18 @@
     <ClInclude Include="Helper.hpp">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="ShareMemory.hpp">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="te.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="msd.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SortingAlgorithm.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

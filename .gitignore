@@ -35,3 +35,7 @@
 *.opendb
 *.db
 *.sdf
+*.idb
+*.tlog
+*.lastbuildstate
+*.enc
