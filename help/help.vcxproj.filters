@@ -33,7 +33,13 @@
     <ClInclude Include="msd.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="SortingAlgorithm.h">
+    <ClInclude Include="Socket.hpp">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SortingAlgorithm.hpp">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TCP.hpp">
       <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>
