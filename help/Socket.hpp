@@ -13,6 +13,12 @@
 
 namespace net {
 
+
+  enum class OS {
+    win,
+    linux
+  }
+
 	//Address families协议域
 	enum class AddressFamily : int{
 		af_inet = AF_INET,
@@ -43,41 +49,50 @@ namespace net {
 		//#define IPPROTO_MAX             256
 	};
 
-	class Socket {
-	protected:
-		int socket_;
-		std::string ip_;
-		std::size_t port_;
-		int af_;
-		int type_;
-		int protocol_;
-    sockaddr sockaddr_;
-	public:
-		Socket() : socket_(-1), ip_(""), port_(0) {
-		};
 
-		Socket(const std::string& ip, const std::size_t& port, int af, int type, int protocol)
-			: socket_(-1), ip_(ip), port_(port), af_(af), type_(type), protocol_(protocol) {
+
+
+  class Socket {
+  protected:
+    int socket_;
+    std::string ip_;
+    std::size_t port_;
+    int af_;
+    int type_;
+    int protocol_;
+    sockaddr sockaddr_;
+  public:
+    Socket() : socket_(-1), ip_(""), port_(0) {
+    };
+
+    Socket(const std::string& ip, const std::size_t& port, int af, int type, int protocol)
+      : socket_(-1), ip_(ip), port_(port), af_(af), type_(type), protocol_(protocol) {
       memset(&socket_, 0, sizeof(socket_));
-		}
+    }
     Socket(const Socket*) = delete;
     Socket(const Socket&) = delete;
     Socket(const Socket&&) = delete;
     Socket &operator=(const Socket&&) = delete;
     Socket &operator=(const Socket&) = delete;
     Socket &operator=(const Socket*) = delete;
- 
 
-		virtual ~Socket() { //父类虚析构函数
-		}
+    virtual ~Socket() { //父类虚析构函数
+    }
+
+    static void StartUp() {
+    }
+
+    static void ClearUp() {
+
+    }
 
     virtual std::error_code Create(std::error_code& ec) = 0;
-		virtual std::error_code Control(long cmd, unsigned long* argp, std::error_code& ec) = 0;//int ioctlsocket( int s, long cmd, u_long * argp);
-		virtual std::error_code Write(const char* p, const std::size_t& size, std::size_t &len, std::error_code& ec) = 0;
-		virtual std::error_code Read(char* p, const std::size_t& size, std::size_t& len, std::error_code& ec) = 0;
-		virtual std::error_code Close(std::error_code& ec) = 0;
+    virtual std::error_code Control(long cmd, unsigned long* argp, std::error_code& ec) = 0;//int ioctlsocket( int s, long cmd, u_long * argp);
+    virtual std::error_code Write(const char* p, const std::size_t& size, std::size_t &len, std::error_code& ec) = 0;
+    virtual std::error_code Read(char* p, const std::size_t& size, std::size_t& len, std::error_code& ec) = 0;
+    virtual std::error_code Close(std::error_code& ec) = 0;
     virtual std::error_code Connect(std::error_code& ec) = 0;
-    virtual std::error_code Accept(int *len, std::error_code& ec) = 0;
+    virtual std::error_code Accept(int& clientSocket, int *len, std::error_code& ec) = 0;
     virtual std::error_code Listen(int szie, std::error_code& ec) = 0;
     virtual std::error_code Bind(std::error_code& ec) = 0;
 
@@ -173,10 +188,10 @@ namespace net {
       return ec;
     };
 
-    std::error_code Accept(int* len, std::error_code& ec) override {
+    std::error_code Accept(int& clientSocket,int* len, std::error_code& ec) override {
       ec.clear();
-      auto ret = accept(socket_, &sockaddr_, len);
-      if (ret != NO_ERROR) {
+      clientSocket = accept(socket_, &sockaddr_, len);
+      if (clientSocket != NO_ERROR) {
         return ec = std::error_code(WSAGetLastError(), std::system_category());
       }
       return ec;
@@ -196,11 +211,6 @@ namespace net {
       auto name = (SOCKADDR_IN*)&sockaddr_;
       /*auto sin = static_cast<SOCKADDR_IN*>(name);*/
       name->sin_family = af_;
-//       auto addr = inet_addr(ip_.c_str());
-//       if (addr == -1) {
-//         WSACleanup();
-//         return ec = std::error_code(WSAGetLastError(), std::system_category());
-//       }
       name->sin_addr.S_un.S_addr = htonl(INADDR_ANY);
       name->sin_port = htons(port_);
       auto ret = bind(socket_, &sockaddr_, sizeof(sockaddr_));
@@ -211,26 +221,34 @@ namespace net {
       return ec;
     }
 		
+    static std::error_code StartUp(std::error_code& ec) noexcept {
+
+    }
+
+    static void StartUp() {
+      std::error_code ec;
+      if (StartUp(ec)) {
+        throw ec;
+      }
+    }
+
+    static std::error_code ClearUp(std::error_code& ec) {
+      WSACleanup();
+    }
+
+    static void ClearUp() {
+      std::error_code ec;
+      if (ClearUp(ec)) {
+        throw ec;
+      }
+    }
 	protected:
 		std::error_code Init(std::error_code& ec) override {
-      ec.clear();
-			WSADATA wsaData;
-			auto ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
-			if (ret != NO_ERROR) {
-				return ec = std::error_code(WSAGetLastError(), std::system_category());
-			}
-      //检测版本号
-      if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wHighVersion) != 2) {
-        WSACleanup();
-        return ec = std::error_code(-1,std::system_category());
-      }
-			return ec;
 		}
 
     void Destroy() override {
       std::error_code ec;
       Close(ec);
-      WSACleanup();
     };
 
 	private:
@@ -238,6 +256,15 @@ namespace net {
 	};
 
 
+  Socket * SocketFactory() {
+    
+  }
+
+  Socket * SocketFactory(OS os) {
+    if (os == OS::win) {
+      return new SocketWin();
+    }
+  }
 
   class TcpShortConnectClient {
   private:
